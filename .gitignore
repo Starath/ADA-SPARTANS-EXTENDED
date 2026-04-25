@@ -92,3 +92,4 @@ composer.lock
 # Misc
 *.bak
 *.old
+*.tsbuildinfo
