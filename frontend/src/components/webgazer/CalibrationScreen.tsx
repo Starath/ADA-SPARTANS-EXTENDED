@@ -1,108 +1,242 @@
 "use client";
-import { useState, useCallback } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useWebGazer } from "./WebGazerProvider";
 
-type CalibrationState = "idle" | "calibrating" | "validating" | "done" | "retry";
+type CalibrationState =
+  | "idle"
+  | "webcam_check"
+  | "calibrating"
+  | "validating"
+  | "done"
+  | "retry";
 
-const CALIBRATION_POINTS = [
-  { x: "10%", y: "10%" }, { x: "50%", y: "10%" }, { x: "90%", y: "10%" },
-  { x: "10%", y: "50%" }, { x: "50%", y: "50%" }, { x: "90%", y: "50%" },
-  { x: "10%", y: "90%" }, { x: "50%", y: "90%" }, { x: "90%", y: "90%" },
-];
-
-const CLICKS_PER_POINT = 5;
-
-interface Props {
-  onComplete: () => void;
+interface CalibrationScreenProps {
+  onComplete?: () => void;
 }
 
-export function CalibrationScreen({ onComplete }: Props) {
-  const { isReady } = useWebGazer();
-  const [phase, setPhase] = useState<CalibrationState>("idle");
-  const [currentPoint, setCurrentPoint] = useState(0);
-  const [clicksOnPoint, setClicksOnPoint] = useState(0);
+const REQUIRED_CLICKS = 5;
+const PASS_DISTANCE_PX = 100;
 
-  const handlePointClick = useCallback(() => {
-    const nextClicks = clicksOnPoint + 1;
+const CALIBRATION_POINTS = [
+  { x: 10, y: 10 },
+  { x: 50, y: 10 },
+  { x: 90, y: 10 },
+  { x: 10, y: 50 },
+  { x: 50, y: 50 },
+  { x: 90, y: 50 },
+  { x: 10, y: 90 },
+  { x: 50, y: 90 },
+  { x: 50, y: 90 },
+  { x: 90, y: 90 },
+];
 
-    if (nextClicks >= CLICKS_PER_POINT) {
-      const nextPoint = currentPoint + 1;
-      if (nextPoint >= CALIBRATION_POINTS.length) {
-        setPhase("validating");
-      } else {
-        setCurrentPoint(nextPoint);
-        setClicksOnPoint(0);
-      }
-    } else {
-      setClicksOnPoint(nextClicks);
+export function CalibrationScreen({ onComplete }: CalibrationScreenProps) {
+  const { isReady, latestGaze, setCalibrated } = useWebGazer();
+
+  const [state, setState] = useState<CalibrationState>("idle");
+  const [activePointIndex, setActivePointIndex] = useState(0);
+  const [clickCounts, setClickCounts] = useState<number[]>(
+    () => Array(CALIBRATION_POINTS.length).fill(0) as number[]
+  );
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+
+  const validationPoint = useMemo(() => {
+    const index = Math.floor(Math.random() * CALIBRATION_POINTS.length);
+    return CALIBRATION_POINTS[index];
+  }, []);
+
+  const activePoint = CALIBRATION_POINTS[activePointIndex];
+  const activeClicks = clickCounts[activePointIndex] ?? 0;
+
+  useEffect(() => {
+    if (state === "webcam_check" && isReady) {
+      setState("calibrating");
     }
-  }, [clicksOnPoint, currentPoint]);
+  }, [state, isReady]);
 
-  const handleValidationClick = useCallback(() => {
-    // In real impl, compare prediction vs click position, compute error
-    // For now, accept calibration
-    onComplete();
-    setPhase("done");
-  }, [onComplete]);
+  function resetCalibration() {
+    window.webgazer?.clearData?.();
+    setActivePointIndex(0);
+    setClickCounts(Array(CALIBRATION_POINTS.length).fill(0) as number[]);
+    setAccuracy(null);
+    setState("calibrating");
+  }
 
-  if (!isReady) {
+  function recordCalibrationClick() {
+    if (!activePoint) return;
+
+    const screenX = (window.innerWidth * activePoint.x) / 100;
+    const screenY = (window.innerHeight * activePoint.y) / 100;
+
+    window.webgazer?.recordScreenPosition?.(screenX, screenY, "click");
+
+    setClickCounts((previous) => {
+      const next = [...previous];
+      const nextCount = Math.min((next[activePointIndex] ?? 0) + 1, REQUIRED_CLICKS);
+      next[activePointIndex] = nextCount;
+
+      if (nextCount >= REQUIRED_CLICKS) {
+        if (activePointIndex + 1 >= CALIBRATION_POINTS.length) {
+          setState("validating");
+        } else {
+          setActivePointIndex((index) => index + 1);
+        }
+      }
+
+      return next;
+    });
+  }
+
+  function validateCalibration() {
+    if (!latestGaze) {
+      setAccuracy(0);
+      setState("retry");
+      return;
+    }
+
+    const targetX = (window.innerWidth * validationPoint.x) / 100;
+    const targetY = (window.innerHeight * validationPoint.y) / 100;
+    const distance = Math.hypot(latestGaze.x - targetX, latestGaze.y - targetY);
+    const nextAccuracy = Math.max(
+      0,
+      Math.min(100, Math.round(100 - (distance / PASS_DISTANCE_PX) * 100))
+    );
+
+    setAccuracy(nextAccuracy);
+    setState(distance <= PASS_DISTANCE_PX ? "done" : "retry");
+  }
+
+  function finishCalibration() {
+    setCalibrated(true);
+    onComplete?.();
+  }
+
+  if (state === "idle") {
     return (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <p className="text-white text-lg">Memuat WebGazer...</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="max-w-md rounded-xl border bg-white p-6 text-center shadow-lg">
+          <h2 className="text-xl font-semibold">Kalibrasi Mata</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Klik setiap titik sebanyak 5 kali agar sistem dapat membaca arah
+            pandangan dengan lebih akurat.
+          </p>
+          <button
+            type="button"
+            onClick={() => setState("webcam_check")}
+            className="mt-5 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
+          >
+            Mulai Kalibrasi
+          </button>
+        </div>
       </div>
     );
   }
 
-  if (phase === "idle") {
+  if (state === "webcam_check") {
     return (
-      <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 gap-6">
-        <h2 className="text-white text-2xl font-bold">Kalibrasi Pelacak Mata</h2>
-        <p className="text-gray-300 text-center max-w-md">
-          Klik setiap titik yang muncul sebanyak 5 kali. Pastikan wajah Anda
-          terlihat jelas oleh kamera.
-        </p>
-        <button
-          onClick={() => setPhase("calibrating")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg"
-        >
-          Mulai Kalibrasi
-        </button>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="max-w-md rounded-xl border bg-white p-6 text-center shadow-lg">
+          <h2 className="text-xl font-semibold">Memeriksa Kamera</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Izinkan akses kamera agar WebGazer dapat membaca arah pandangan.
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (phase === "calibrating") {
-    const point = CALIBRATION_POINTS[currentPoint];
+  if (state === "validating") {
     return (
-      <div className="fixed inset-0 bg-black/90 z-50">
-        <p className="text-white text-center pt-8 text-sm opacity-60">
-          Titik {currentPoint + 1} dari {CALIBRATION_POINTS.length} — klik {CLICKS_PER_POINT - clicksOnPoint} kali lagi
-        </p>
-        <button
-          onClick={handlePointClick}
-          style={{ position: "absolute", left: point.x, top: point.y, transform: "translate(-50%,-50%)" }}
-          className="w-12 h-12 rounded-full bg-yellow-400 hover:bg-yellow-300 transition-transform active:scale-90 flex items-center justify-center"
-        >
-          <span className="text-black font-bold">{clicksOnPoint}</span>
-        </button>
-      </div>
-    );
-  }
+      <div className="fixed inset-0 z-50 bg-white">
+        <div className="absolute left-1/2 top-8 -translate-x-1/2 rounded-lg border bg-white px-4 py-3 text-center shadow">
+          <p className="text-sm font-medium">Validasi Akurasi</p>
+          <p className="text-xs text-gray-600">
+            Lihat titik merah, lalu klik tombol validasi.
+          </p>
+          <button
+            type="button"
+            onClick={validateCalibration}
+            className="mt-3 rounded-lg bg-black px-4 py-2 text-xs font-medium text-white"
+          >
+            Validasi Pandangan
+          </button>
+        </div>
 
-  if (phase === "validating") {
-    return (
-      <div className="fixed inset-0 bg-black/90 z-50">
-        <p className="text-white text-center pt-8">
-          Validasi: klik titik hijau ini
-        </p>
-        <button
-          onClick={handleValidationClick}
-          style={{ position: "absolute", left: "50%", top: "40%", transform: "translate(-50%,-50%)" }}
-          className="w-12 h-12 rounded-full bg-green-500 hover:bg-green-400"
+        <div
+          className="absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-600"
+          style={{
+            left: `${validationPoint.x}%`,
+            top: `${validationPoint.y}%`,
+          }}
         />
       </div>
     );
   }
 
-  return null;
+  if (state === "done") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="max-w-md rounded-xl border bg-white p-6 text-center shadow-lg">
+          <h2 className="text-xl font-semibold">Kalibrasi Berhasil</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Akurasi: {accuracy ?? 0}% — Cukup baik!
+          </p>
+          <button
+            type="button"
+            onClick={finishCalibration}
+            className="mt-5 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
+          >
+            Lanjut Membaca
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === "retry") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="max-w-md rounded-xl border bg-white p-6 text-center shadow-lg">
+          <h2 className="text-xl font-semibold">Kalibrasi Belum Akurat</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Akurasi: {accuracy ?? 0}% — Coba lagi.
+          </p>
+          <button
+            type="button"
+            onClick={resetCalibration}
+            className="mt-5 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
+          >
+            Ulangi Kalibrasi
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-white">
+      <div className="absolute left-1/2 top-8 -translate-x-1/2 rounded-lg border bg-white px-4 py-3 text-center shadow">
+        <p className="text-sm font-medium">
+          Titik {activePointIndex + 1}/{CALIBRATION_POINTS.length}
+        </p>
+        <p className="text-xs text-gray-600">
+          Klik: {activeClicks}/{REQUIRED_CLICKS}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={recordCalibrationClick}
+        className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-600 text-xs font-bold text-white"
+        style={{
+          left: `${activePoint.x}%`,
+          top: `${activePoint.y}%`,
+        }}
+        aria-label={`Calibration point ${activePointIndex + 1}`}
+      >
+        {activeClicks}
+      </button>
+    </div>
+  );
 }
