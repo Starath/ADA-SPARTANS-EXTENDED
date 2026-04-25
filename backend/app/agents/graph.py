@@ -1,22 +1,10 @@
 from __future__ import annotations
-from typing import Optional, TypedDict
 from langgraph.graph import StateGraph, END
-from app.models.schemas import HandwritingResult, TranscriptResult, DiagnosisResult
 from app.agents.researcher import researcher_node
 from app.agents.diagnostician import diagnostician_node
 from app.agents.critic import critic_node
 from app.agents.reporter import reporter_node
-
-
-class AgentState(TypedDict):
-    handwriting: Optional[HandwritingResult]
-    transcript: Optional[TranscriptResult]
-    child_age: Optional[int]
-    child_grade: Optional[int]
-    context: str
-    raw_diagnosis: Optional[DiagnosisResult]
-    critique: Optional[str]
-    final_report: Optional[DiagnosisResult]
+from app.agents.state import AgentState
 
 
 def build_graph() -> StateGraph:

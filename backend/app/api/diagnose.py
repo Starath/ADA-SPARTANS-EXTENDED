@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from app.agents.graph import diagnosis_graph, AgentState
+from app.agents.graph import diagnosis_graph
+from app.agents.state import AgentState
 from app.models.schemas import DiagnoseRequest, DiagnosisResult
 
 router = APIRouter()

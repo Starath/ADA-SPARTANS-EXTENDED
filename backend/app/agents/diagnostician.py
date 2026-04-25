@@ -1,8 +1,60 @@
 from __future__ import annotations
-import os
-import json
-from app.agents.graph import AgentState
+
+from app.agents.state import AgentState
 from app.models.schemas import DiagnosisResult, DiagnosisIndicator
+
+
+def _is_reversal_detection(item: dict) -> bool:
+    return bool(item.get("is_reversal"))
+
+
+def _reversal_detections(hw) -> list[dict]:
+    return [
+        item for item in getattr(hw, "detected_chars", [])
+        if isinstance(item, dict) and _is_reversal_detection(item)
+    ]
+
+
+def _unique_chars_from_handwriting(hw, detections: list[dict]) -> list[str]:
+    chars: list[str] = []
+
+    for char in getattr(hw, "reversal_chars", []) or []:
+        if char and char not in chars:
+            chars.append(str(char))
+
+    for item in detections:
+        char = item.get("char")
+        if char and char not in chars:
+            chars.append(str(char))
+
+    return chars
+
+
+def _reversal_evidence(hw) -> str:
+    detections = _reversal_detections(hw)
+    chars = _unique_chars_from_handwriting(hw, detections)
+
+    char_text = ", ".join(chars) if chars else "tidak spesifik"
+
+    if not detections:
+        return (
+            f"Terdeteksi pembalikan: {char_text}, "
+            f"confidence {hw.confidence:.0%}"
+        )
+
+    labels: list[str] = []
+    for item in detections:
+        label = item.get("label") or f"class_{item.get('cls', 'unknown')}"
+        if label not in labels:
+            labels.append(str(label))
+
+    label_text = ", ".join(labels[:5]) if labels else "tanpa label"
+
+    return (
+        f"Terdeteksi pembalikan: {char_text}; "
+        f"{len(detections)} deteksi YOLO ({label_text}); "
+        f"confidence {hw.confidence:.0%}"
+    )
 
 
 def diagnostician_node(state: AgentState) -> AgentState:
@@ -18,7 +70,7 @@ def diagnostician_node(state: AgentState) -> AgentState:
             indicators.append(DiagnosisIndicator(
                 name="Pembalikan Huruf",
                 severity="significant",
-                evidence=f"Terdeteksi pembalikan: {', '.join(hw.reversal_chars) or 'tidak spesifik'}, confidence {hw.confidence:.0%}",
+                evidence=_reversal_evidence(hw),
             ))
         elif hw.classification == "corrected":
             risk_score += 0.2
