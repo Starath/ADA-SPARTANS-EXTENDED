@@ -1,12 +1,13 @@
 import type { LLMProvider } from "@/types";
+import { ClaudeAgentSDKProvider } from "./claudeAgentSDK";
+import { GroqProvider } from "./groqProvider";
 
 export type { LLMProvider };
 
-export function createLLMProvider(): LLMProvider {
-  if (process.env.PRODUCTION === "true") {
-    const { GroqProvider } = require("./groqProvider");
-    return new GroqProvider(process.env.GROQ_API_KEY!);
-  }
-  const { ClaudeAgentSDKProvider } = require("./claudeAgentSDK");
-  return new ClaudeAgentSDKProvider();
+type Env = Record<string, string | undefined>;
+
+export function createLLMProvider(env: Env = process.env as Env): LLMProvider {
+  return env.PRODUCTION === "true"
+    ? new GroqProvider(env.GROQ_API_KEY ?? "")
+    : new ClaudeAgentSDKProvider();
 }

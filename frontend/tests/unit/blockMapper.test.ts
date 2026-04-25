@@ -1,57 +1,59 @@
-import { describe, it, expect } from "vitest";
-import { bboxToPixelRect, findBlockAtPoint } from "@/lib/pdf/blockMapper";
+import { describe, expect, it } from "vitest";
+import {
+  bboxToPixelRect,
+  findBlockAtPoint,
+  findBlockIdAtPoint,
+} from "@/lib/pdf/blockMapper";
 import type { PDFBlock } from "@/types";
 
+const blocks: PDFBlock[] = [
+  {
+    id: "block-1",
+    type: "text",
+    bbox: { x0: 0.1, y0: 0.1, x1: 0.5, y1: 0.2 },
+    text: "Paragraf pertama",
+  },
+  {
+    id: "block-2",
+    type: "text",
+    bbox: { x0: 0.6, y0: 0.5, x1: 0.9, y1: 0.7 },
+    text: "Paragraf kedua",
+  },
+];
+
 describe("bboxToPixelRect", () => {
-  it("maps normalized bbox to correct pixel rect", () => {
+  it("maps relative bbox [0.1, 0.1, 0.5, 0.2] to correct px rect for 1000x800 canvas", () => {
     const rect = bboxToPixelRect(
       { x0: 0.1, y0: 0.1, x1: 0.5, y1: 0.2 },
       1000,
       800
     );
+
     expect(rect.left).toBe(100);
     expect(rect.top).toBe(80);
-    expect(rect.width).toBeCloseTo(400);
-    expect(rect.height).toBeCloseTo(80);
-  });
-
-  it("handles full-page block (0 to 1)", () => {
-    const rect = bboxToPixelRect({ x0: 0, y0: 0, x1: 1, y1: 1 }, 1000, 800);
-    expect(rect.width).toBe(1000);
-    expect(rect.height).toBe(800);
+    expect(rect.width).toBe(400);
+    expect(rect.height).toBe(80);
+    expect(rect.right).toBe(500);
+    expect(rect.bottom).toBe(160);
   });
 });
 
 describe("findBlockAtPoint", () => {
-  const blocks: PDFBlock[] = [
-    {
-      id: "block-1",
-      type: "text",
-      bbox: { x0: 0.1, y0: 0.1, x1: 0.5, y1: 0.2 },
-      text: "Hello world",
-    },
-    {
-      id: "block-2",
-      type: "text",
-      bbox: { x0: 0.1, y0: 0.3, x1: 0.9, y1: 0.4 },
-      text: "Another paragraph",
-    },
-  ];
-
-  it("returns the block containing the gaze point", () => {
-    // Point at 200px, 120px on 1000×800 canvas → normalized 0.2, 0.15 → in block-1
+  it("returns matching blockId when gaze point is inside a rect", () => {
     const block = findBlockAtPoint(200, 120, blocks, 1000, 800);
+
     expect(block?.id).toBe("block-1");
   });
 
-  it("returns null when gaze point is outside all blocks", () => {
-    const block = findBlockAtPoint(900, 600, blocks, 1000, 800);
-    expect(block).toBeNull();
+  it("returns matching blockId through findBlockIdAtPoint helper", () => {
+    const blockId = findBlockIdAtPoint(700, 480, blocks, 1000, 800);
+
+    expect(blockId).toBe("block-2");
   });
 
-  it("returns the second block when point is in that range", () => {
-    // Point at 500px, 280px on 1000×800 → normalized 0.5, 0.35 → in block-2
-    const block = findBlockAtPoint(500, 280, blocks, 1000, 800);
-    expect(block?.id).toBe("block-2");
+  it("returns null when gaze point is outside all rects", () => {
+    const block = findBlockAtPoint(950, 760, blocks, 1000, 800);
+
+    expect(block).toBeNull();
   });
 });
