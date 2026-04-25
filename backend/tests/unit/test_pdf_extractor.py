@@ -1,9 +1,9 @@
 import io
-import pytest
 import fitz
 from app.services.pdf_extractor import extract_pdf
-from app.models.schemas import PageBlocks, PDFBlock
+from app.models.schemas import PageBlocks
 from PIL import Image
+
 
 def make_pdf_with_image() -> bytes:
     """Buat PDF dengan satu image dummy 50x50 px"""
@@ -21,6 +21,29 @@ def make_pdf_with_image() -> bytes:
     buf = io.BytesIO()
     doc.save(buf)
     return buf.getvalue()
+
+
+def make_pdf_with_two_images() -> bytes:
+    img1 = Image.new("RGB", (50, 50), color=(255, 0, 0))
+    img2 = Image.new("RGB", (50, 50), color=(0, 255, 0))
+
+    img1_bytes = io.BytesIO()
+    img1.save(img1_bytes, format="PNG")
+    img1_bytes.seek(0)
+
+    img2_bytes = io.BytesIO()
+    img2.save(img2_bytes, format="PNG")
+    img2_bytes.seek(0)
+
+    doc = fitz.open()
+    page = doc.new_page(width=200, height=200)
+    page.insert_image(fitz.Rect(25, 25, 75, 75), stream=img1_bytes.read())
+    page.insert_image(fitz.Rect(125, 25, 175, 75), stream=img2_bytes.read())
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
 
 def make_simple_pdf(text: str = "Hello World") -> bytes:
     doc = fitz.open()
@@ -79,6 +102,7 @@ def test_empty_pdf_no_crash():
     result = extract_pdf(buf.getvalue())
     assert len(result) == 1
 
+
 def test_image_blocks_have_image_data():
     """Ensure image blocks contain non-empty base64 image_data."""
     pdf_bytes = make_pdf_with_image()
@@ -99,3 +123,15 @@ def test_image_blocks_have_image_data():
                 assert 0 <= block.bbox.y1 <= 1
 
     assert found_image_block, "No image block found in PDF"
+
+
+def test_extract_multiple_images_same_page_preserves_unique_image_data():
+    pdf_bytes = make_pdf_with_two_images()
+    pages = extract_pdf(pdf_bytes)
+    image_blocks = [block for block in pages[0].blocks if block.type == "image"]
+
+    assert len(image_blocks) == 2
+
+    bboxes = [(b.bbox.x0, b.bbox.y0, b.bbox.x1, b.bbox.y1) for b in image_blocks]
+    assert bboxes[0] != bboxes[1]
+    assert image_blocks[0].image_data != image_blocks[1].image_data

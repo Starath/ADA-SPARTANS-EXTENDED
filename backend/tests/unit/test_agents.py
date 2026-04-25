@@ -38,6 +38,17 @@ def make_handwriting(cls: str = "reversal") -> HandwritingResult:
         classification=cls,
         confidence=0.92,
         reversal_chars=["b", "d"],
+        detected_chars=[
+            {
+                "bbox": [10, 20, 60, 90],
+                "cls": 0,
+                "conf": 0.92,
+                "label": "reversal_b",
+                "char": "b",
+                "is_reversal": cls == "reversal",
+                "is_corrected": cls == "corrected",
+            }
+        ],
     )
 
 
@@ -51,6 +62,33 @@ class TestResearcherNode:
         state = make_state()
         result = researcher_node(state)
         assert isinstance(result["context"], str)
+
+    def test_context_uses_reversal_handwriting_details(self):
+        state = make_state(handwriting=make_handwriting("reversal"))
+        result = researcher_node(state)
+
+        context = result["context"].lower()
+        assert "pembalikan huruf" in context
+        assert "b, d" in context
+        assert "92%" in context
+        assert "jumlah deteksi model: 1" in context
+
+    def test_context_uses_transcript_wpm_details(self):
+        state = make_state(transcript=make_transcript(wpm=25.0), child_grade=2)
+        result = researcher_node(state)
+
+        context = result["context"].lower()
+        assert "25 kata/menit" in context
+        assert "kelas 2 sd" in context
+        assert "kategori rendah" in context
+
+    def test_context_for_empty_state_does_not_raise_risk_context(self):
+        state = make_state(handwriting=None, transcript=None)
+        result = researcher_node(state)
+
+        context = result["context"].lower()
+        assert "belum ada data handwriting atau transcript" in context
+        assert "tidak boleh dinaikkan tanpa bukti" in context
 
 
 class TestPipelineFlow:
@@ -105,7 +143,6 @@ class TestCriticNode:
             child_age=5,
         ))
         state = diagnostician_node(state)
-        # Force high risk manually
         state["raw_diagnosis"] = state["raw_diagnosis"].model_copy(update={"risk_level": "high"})
         result = critic_node(state)
         assert result["raw_diagnosis"].risk_level == "medium"
