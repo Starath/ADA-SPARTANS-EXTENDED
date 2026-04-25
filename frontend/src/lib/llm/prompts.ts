@@ -1,16 +1,19 @@
 import type {
   LLMProvider,
-  WordDefinitionResponse,
-  SimplifiedSentenceResponse,
   SimplifiedParagraphResponse,
+  SimplifiedSentenceResponse,
+  WordDefinitionResponse,
 } from "@/types";
 
 const SYSTEM_PROMPT =
-  "Kamu adalah asisten edukasi anak disleksia berbahasa Indonesia. Selalu jawab dalam format JSON yang diminta saja, tanpa teks lain.";
+  "Kamu adalah asisten edukasi anak disleksia berbahasa Indonesia. Jawab JSON saja, tanpa teks tambahan.";
 
 // Claude CLI sometimes wraps output in markdown code fences — strip before parsing.
 function parseJSON<T>(raw: string): T {
-  const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const stripped = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
   return JSON.parse(stripped);
 }
 

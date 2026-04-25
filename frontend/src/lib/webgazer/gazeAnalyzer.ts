@@ -1,57 +1,83 @@
-import type { GazePoint, GazeEvent } from "@/types";
+import type { GazeEvent, GazePoint } from "@/types";
 
-const FIXATION_RADIUS_PX = 40;
-const FIXATION_MIN_DURATION_MS = 1500;
-const REGRESSION_THRESHOLD_PX = 120;
-const REREAD_MIN_VISITS = 3;
-const BUFFER_SIZE = 50;
+export const FIXATION_RADIUS_PX = 40;
+export const FIXATION_MIN_DURATION_MS = 1500;
+export const REGRESSION_THRESHOLD_PX = 120;
+export const REREAD_MIN_VISITS = 3;
+export const GAZE_BUFFER_SIZE = 50;
+
+export interface FixationResult {
+  isFixation: boolean;
+  durationMs: number;
+  centroid?: { x: number; y: number };
+}
 
 export class FixationDetector {
   private buffer: GazePoint[] = [];
 
-  addPoint(point: GazePoint): { isFixation: boolean; durationMs: number } {
+  addPoint(point: GazePoint): FixationResult {
     this.buffer.push(point);
-    if (this.buffer.length > BUFFER_SIZE) this.buffer.shift();
-    if (this.buffer.length < 5) return { isFixation: false, durationMs: 0 };
 
-    const xs = this.buffer.map((p) => p.x);
-    const ys = this.buffer.map((p) => p.y);
-    const stdX = standardDeviation(xs);
-    const stdY = standardDeviation(ys);
-
-    if (stdX < FIXATION_RADIUS_PX && stdY < FIXATION_RADIUS_PX) {
-      const durationMs =
-        this.buffer[this.buffer.length - 1].timestamp - this.buffer[0].timestamp;
-      return { isFixation: durationMs >= FIXATION_MIN_DURATION_MS, durationMs };
+    if (this.buffer.length > GAZE_BUFFER_SIZE) {
+      this.buffer.shift(); // Keep buffer size constant
     }
-    return { isFixation: false, durationMs: 0 };
+
+    if (this.buffer.length < 2) {
+      return { isFixation: false, durationMs: 0 };
+    }
+
+    const durationMs =
+      this.buffer[this.buffer.length - 1].timestamp - this.buffer[0].timestamp;
+
+    if (durationMs < FIXATION_MIN_DURATION_MS) {
+      return { isFixation: false, durationMs }; // Ensure that we don’t emit too early
+    }
+
+    const centroid = meanPoint(this.buffer);
+    const maxDistanceFromCentroid = Math.max(
+      ...this.buffer.map((p) => distance(p, centroid))
+    );
+
+    // Return result only when the max distance from centroid is within the threshold
+    return {
+      isFixation: maxDistanceFromCentroid <= FIXATION_RADIUS_PX,
+      durationMs,
+      centroid,
+    };
   }
 
-  reset() {
+  reset(): void {
     this.buffer = [];
   }
 }
 
 export class RegressionDetector {
-  private maxXPerLine = new Map<number, number>(); // y-bucket → max x seen
-  private regressionCount = new Map<string, number>(); // blockId → count
+  private maxXPerLine = new Map<number, number>();
+  private regressionCount = new Map<string, number>();
 
-  private yBucket(y: number) {
-    return Math.floor(y / 30) * 30;
-  }
+  constructor(private readonly lineHeightPx = 30) {}
 
   addPoint(point: GazePoint, blockId: string | null): GazeEvent | null {
     const bucket = this.yBucket(point.y);
-    const prevMax = this.maxXPerLine.get(bucket) ?? point.x;
+    const previousMaxX = this.maxXPerLine.get(bucket);
 
-    if (point.x > prevMax) {
+    if (previousMaxX === undefined) {
       this.maxXPerLine.set(bucket, point.x);
       return null;
     }
 
-    if (prevMax - point.x >= REGRESSION_THRESHOLD_PX && blockId) {
+    if (point.x > previousMaxX) {
+      this.maxXPerLine.set(bucket, point.x);
+      return null;
+    }
+
+    if (blockId && previousMaxX - point.x >= REGRESSION_THRESHOLD_PX) {
       const count = (this.regressionCount.get(blockId) ?? 0) + 1;
       this.regressionCount.set(blockId, count);
+
+      // Reset the line maximum to avoid emitting duplicate regressions for the same backward jump
+      this.maxXPerLine.set(bucket, point.x);
+
       return {
         type: "regression",
         blockId,
@@ -59,57 +85,86 @@ export class RegressionDetector {
         timestamp: point.timestamp,
       };
     }
+
     return null;
   }
 
-  getTotalRegressions(): number {
-    let total = 0;
-    for (const v of this.regressionCount.values()) total += v;
-    return total;
+  getRegressionCount(blockId: string): number {
+    return this.regressionCount.get(blockId) ?? 0;
   }
 
-  reset() {
+  getTotalRegressions(): number {
+    return Array.from(this.regressionCount.values()).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+  }
+
+  reset(): void {
     this.maxXPerLine.clear();
     this.regressionCount.clear();
+  }
+
+  private yBucket(y: number): number {
+    return Math.floor(y / this.lineHeightPx) * this.lineHeightPx;
   }
 }
 
 export class RereadTracker {
-  private visits = new Map<string, number[]>(); // blockId → timestamps
+  private visitCounts = new Map<string, number>();
+  private currentBlockId: string | null = null;
 
-  recordVisit(blockId: string, timestamp: number): GazeEvent | null {
-    const visits = this.visits.get(blockId) ?? [];
-
-    // Only count a new visit if gaze left and came back (gap > 2s)
-    const lastVisit = visits[visits.length - 1];
-    if (lastVisit && timestamp - lastVisit < 2000) {
-      visits[visits.length - 1] = timestamp;
-      this.visits.set(blockId, visits);
+  recordVisit(blockId: string | null, timestamp: number): GazeEvent | null {
+    if (!blockId) {
+      this.currentBlockId = null;
       return null;
     }
 
-    visits.push(timestamp);
-    this.visits.set(blockId, visits);
+    if (blockId === this.currentBlockId) {
+      return null; // Ignore consecutive visits
+    }
 
-    if (visits.length >= REREAD_MIN_VISITS) {
+    this.currentBlockId = blockId;
+    const count = (this.visitCounts.get(blockId) ?? 0) + 1;
+    this.visitCounts.set(blockId, count);
+
+    if (count >= REREAD_MIN_VISITS) {
       return {
         type: "reread",
         blockId,
-        count: visits.length,
+        count,
         timestamp,
       };
     }
+
     return null;
   }
 
-  reset() {
-    this.visits.clear();
+  getVisitCount(blockId: string): number {
+    return this.visitCounts.get(blockId) ?? 0;
+  }
+
+  reset(): void {
+    this.visitCounts.clear();
+    this.currentBlockId = null;
   }
 }
 
-function standardDeviation(values: number[]): number {
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const variance =
-    values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
-  return Math.sqrt(variance);
+function meanPoint(points: GazePoint[]): { x: number; y: number } {
+  const totals = points.reduce(
+    (acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }),
+    { x: 0, y: 0 }
+  );
+
+  return {
+    x: totals.x / points.length,
+    y: totals.y / points.length,
+  };
+}
+
+function distance(
+  a: { x: number; y: number },
+  b: { x: number; y: number }
+): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }

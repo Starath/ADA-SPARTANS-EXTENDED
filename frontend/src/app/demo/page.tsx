@@ -12,20 +12,5 @@ const AdaptiveReader = dynamic(
 );
 
 export default function DemoPage() {
-  const [pages, setPages] = useState<PDFPage[] | null>(null);
-
-  return (
-    <FontControllerProvider>
-      <main className="min-h-screen bg-gray-50 p-8">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">
-          Demo Membaca Adaptif — DyslexiAID
-        </h1>
-        {!pages ? (
-          <PDFUploader onExtracted={setPages} />
-        ) : (
-          <AdaptiveReader pages={pages} />
-        )}
-      </main>
-    </FontControllerProvider>
-  );
+  return <AdaptiveReader />;
 }

@@ -77,6 +77,7 @@ export interface FontSettings {
 // LLM types
 export interface LLMProvider {
   complete(prompt: string, system?: string): Promise<string>;
+  stream?(prompt: string, system?: string): AsyncIterable<string>;
 }
 
 export interface WordDefinitionResponse {
