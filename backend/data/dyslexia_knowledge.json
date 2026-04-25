@@ -1,0 +1,77 @@
+[
+  {
+    "id": "def_dyslexia",
+    "text": "Disleksia adalah kesulitan belajar spesifik berbasis neurologis yang ditandai dengan kesulitan dalam pengenalan kata yang akurat dan atau lancar, kemampuan mengeja yang buruk, dan kemampuan dekoding yang buruk. Disleksia bukan disebabkan oleh kecerdasan rendah.",
+    "topic": "definisi"
+  },
+  {
+    "id": "reversal_normal",
+    "text": "Pembalikan huruf seperti b-d, p-q, atau 6-9 dianggap normal pada anak usia di bawah 7 tahun karena otak mereka masih mengembangkan kemampuan orientasi spasial. Pembalikan yang persisten setelah usia 7-8 tahun dapat menjadi indikasi risiko disleksia.",
+    "topic": "pembalikan_huruf"
+  },
+  {
+    "id": "reversal_significant",
+    "text": "Pembalikan huruf yang konsisten pada anak usia di atas 7 tahun, terutama pada huruf b/d, p/q, dan angka 6/9, merupakan salah satu indikator disleksia yang signifikan. Ini sering disertai kesulitan membaca dan mengeja.",
+    "topic": "pembalikan_huruf"
+  },
+  {
+    "id": "reading_speed_grade1",
+    "text": "Anak kelas 1 SD diharapkan membaca dengan kecepatan 40-60 kata per menit pada akhir tahun. Anak kelas 2 SD diharapkan 60-80 kata per menit. Kecepatan di bawah 40 kata per menit dapat mengindikasikan kesulitan membaca yang perlu perhatian.",
+    "topic": "kecepatan_membaca"
+  },
+  {
+    "id": "reading_speed_grade2",
+    "text": "Standar kelancaran membaca untuk anak kelas 2 SD Indonesia adalah sekitar 60 kata per menit. Anak dengan disleksia sering membaca lebih lambat karena upaya ekstra yang dibutuhkan untuk dekoding setiap kata.",
+    "topic": "kecepatan_membaca"
+  },
+  {
+    "id": "screening_protocol",
+    "text": "Skrining disleksia yang komprehensif meliputi penilaian fonologis, kelancaran membaca, kemampuan mengeja, sampel tulisan tangan, dan riwayat keluarga. Skrining awal harus ditindaklanjuti dengan evaluasi psikologis formal jika ada indikator risiko.",
+    "topic": "protokol_skrining"
+  },
+  {
+    "id": "family_history",
+    "text": "Disleksia memiliki komponen genetik yang kuat. Jika salah satu orang tua atau saudara kandung memiliki disleksia, risiko anak untuk mengalami disleksia meningkat 40-60%. Riwayat keluarga adalah faktor risiko penting.",
+    "topic": "faktor_risiko"
+  },
+  {
+    "id": "phonological_awareness",
+    "text": "Kesadaran fonologis yang lemah adalah prediktor terkuat disleksia. Ini mencakup kesulitan mengidentifikasi rima, memisahkan suku kata, dan memanipulasi fonem. Asesmen fonologis penting dalam evaluasi disleksia.",
+    "topic": "indikator"
+  },
+  {
+    "id": "early_intervention",
+    "text": "Intervensi dini sangat penting untuk anak disleksia. Program terstruktur berbasis fonologis seperti Orton-Gillingham atau program multisensori dapat secara signifikan meningkatkan kemampuan membaca jika dimulai sebelum usia 9 tahun.",
+    "topic": "intervensi"
+  },
+  {
+    "id": "adaptive_reading",
+    "text": "Akomodasi untuk anak disleksia meliputi: font khusus seperti OpenDyslexic, ukuran teks lebih besar, spasi baris lebih lebar, text-to-speech, lebih banyak waktu untuk membaca, dan penghindaran teks padat. Teknologi adaptif dapat meningkatkan akses ke konten bacaan.",
+    "topic": "akomodasi"
+  },
+  {
+    "id": "diagnosis_criteria",
+    "text": "Diagnosis disleksia memerlukan evaluasi komprehensif oleh psikolog pendidikan atau neuropsikolog. Kriteria meliputi: ketidaksesuaian antara IQ dan kemampuan membaca, kesulitan yang persisten meski sudah mendapat pengajaran memadai, dan dampak pada fungsi akademik.",
+    "topic": "diagnosis"
+  },
+  {
+    "id": "co_occurring",
+    "text": "Disleksia sering bersamaan dengan kondisi lain seperti ADHD (30-40% kasus), disgrafia, diskalkulia, dan gangguan pemrosesan bahasa. Evaluasi menyeluruh penting untuk mengidentifikasi kondisi yang menyertai.",
+    "topic": "komorbiditas"
+  },
+  {
+    "id": "corrected_writing",
+    "text": "Banyaknya koreksi dalam tulisan tangan anak dapat menunjukkan kesulitan visual-ortografis atau ketidakpastian dalam bentuk huruf. Ini bisa menjadi tanda disleksia ringan atau disgrafia, terutama jika disertai kelancaran membaca yang rendah.",
+    "topic": "tulisan_tangan"
+  },
+  {
+    "id": "wpm_interpretation",
+    "text": "Interpretasi kecepatan membaca (kata per menit/WPM): di bawah 40 WPM untuk kelas 2 dianggap sangat rendah dan mengindikasikan risiko tinggi; 40-60 WPM dianggap di bawah rata-rata; 60-80 WPM dalam rentang normal; di atas 80 WPM dianggap baik.",
+    "topic": "kecepatan_membaca"
+  },
+  {
+    "id": "referral_criteria",
+    "text": "Rujukan ke profesional diperlukan jika: anak menunjukkan 3 atau lebih indikator risiko; indikator telah berlangsung lebih dari 3 bulan; ada dampak signifikan pada fungsi akademik atau kepercayaan diri; atau ada riwayat keluarga disleksia.",
+    "topic": "rujukan"
+  }
+]

@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import json
+import logging
+import os
+
 from app.agents.state import AgentState
 from app.models.schemas import DiagnosisResult, DiagnosisIndicator
+
+logger = logging.getLogger(__name__)
 
 
 def _is_reversal_detection(item: dict) -> bool:
@@ -57,6 +63,71 @@ def _reversal_evidence(hw) -> str:
     )
 
 
+def _call_claude_reasoning(
+    risk_level: str,
+    risk_score: float,
+    indicators: list[DiagnosisIndicator],
+    context: str,
+) -> str:
+    """Call Claude Sonnet 4.6 via OpenRouter for enhanced reasoning narrative."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        logger.warning("OPENROUTER_API_KEY not set; using fallback reasoning")
+        return f"Skor risiko: {risk_score:.2f}. Konteks: {context[:200]}"
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+            default_headers={
+                "HTTP-Referer": "https://dyslexiaid.app",
+                "X-Title": "DyslexiAID",
+            },
+        )
+
+        indicator_text = "\n".join(
+            f"- {ind.name} ({ind.severity}): {ind.evidence}"
+            for ind in indicators
+        ) or "Tidak ada indikator spesifik"
+
+        prompt = f"""Kamu adalah psikolog pendidikan yang membantu menginterpretasi hasil skrining disleksia anak SD.
+
+Hasil analisis:
+- Tingkat risiko: {risk_level}
+- Skor risiko: {risk_score:.2f} (0=rendah, 1=tinggi)
+- Indikator:
+{indicator_text}
+
+Konteks:
+{context[:500]}
+
+Tulis penjelasan analisis dalam 2-3 kalimat bahasa Indonesia yang jelas, empatis, dan mudah dipahami orang tua.
+Fokus pada apa artinya hasil ini untuk anak, bukan jargon teknis.
+Jawab hanya teks penjelasannya, tanpa label atau format."""
+
+        response = client.chat.completions.create(
+            model="anthropic/claude-sonnet-4-6",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Kamu psikolog pendidikan yang membantu orang tua memahami hasil skrining disleksia anak.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=300,
+            temperature=0.3,
+        )
+
+        reasoning = response.choices[0].message.content or ""
+        return reasoning.strip()
+
+    except Exception as exc:
+        logger.warning("Claude reasoning call failed: %s", exc)
+        return f"Skor risiko: {risk_score:.2f}. Konteks: {context[:200]}"
+
+
 def diagnostician_node(state: AgentState) -> AgentState:
     indicators: list[DiagnosisIndicator] = []
     risk_score = 0.0
@@ -106,15 +177,24 @@ def diagnostician_node(state: AgentState) -> AgentState:
         risk_level = "low"
         confidence = 0.8
 
+    reasoning = _call_claude_reasoning(
+        risk_level=risk_level,
+        risk_score=risk_score,
+        indicators=indicators,
+        context=state.get("context", ""),
+    )
+
     diagnosis = DiagnosisResult(
         risk_level=risk_level,
         confidence=confidence,
         indicators=indicators,
-        reasoning=f"Skor risiko: {risk_score:.2f}. Konteks: {state.get('context', '')[:200]}",
+        reasoning=reasoning,
         recommendation=(
             "Konsultasikan dengan psikolog pendidikan atau terapis wicara."
             if risk_level == "high"
             else "Pantau perkembangan dan pertimbangkan evaluasi lanjutan."
+            if risk_level == "medium"
+            else "Tidak ada tindakan segera diperlukan. Pantau perkembangan anak."
         ),
     )
 
