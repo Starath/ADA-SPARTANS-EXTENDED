@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
-  FontSettings,
   GazeEvent,
   PDFBlock,
   PDFPage,
   SimplifiedParagraphResponse,
   SimplifiedSentenceResponse,
-  WordDefinitionResponse,
 } from "@/types";
+import { WordPopup } from "@/components/adaptive-ui/WordPopup";
+import {
+  FontControllerProvider,
+  useFontController,
+} from "@/components/adaptive-ui/FontController";
 import { AnomalyDetector } from "@/lib/webgazer/anomalyDetector";
 import { WebGazerProvider, useWebGazer } from "@/components/webgazer/WebGazerProvider";
 import { CalibrationScreen } from "@/components/webgazer/CalibrationScreen";
@@ -20,29 +23,40 @@ import { PDFCanvas } from "./PDFCanvas";
 interface WordPopupState {
   wordId: string;
   word: string;
-  x: number;
-  y: number;
-  definition: string;
-  isLoading: boolean;
+  anchorRect: DOMRect;
 }
-
-const DEFAULT_FONT_SETTINGS: FontSettings = {
-  fontSize: 16,
-  lineHeight: 1.5,
-  letterSpacing: 0,
-  fontFamily: "default",
-};
 
 export function AdaptiveReader() {
   return (
     <WebGazerProvider>
-      <AdaptiveReaderContent />
+      <FontControllerProvider>
+        <AdaptiveReaderContent />
+      </FontControllerProvider>
     </WebGazerProvider>
   );
 }
 
 function AdaptiveReaderContent() {
   const { isCalibrated, latestGaze } = useWebGazer();
+  const {
+    fontSize,
+    lineHeight,
+    letterSpacing,
+    fontFamily,
+    increase,
+    applyDyslexicFont,
+    reset,
+  } = useFontController();
+
+  const fontSettings = useMemo(
+    () => ({
+      fontSize,
+      lineHeight,
+      letterSpacing,
+      fontFamily,
+    }),
+    [fontSize, lineHeight, letterSpacing, fontFamily]
+  );  
 
   const detector = useMemo(() => new AnomalyDetector(), []);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -50,8 +64,6 @@ function AdaptiveReaderContent() {
   const [wordPopup, setWordPopup] = useState<WordPopupState | null>(null);
   const [simplifiedBlocks, setSimplifiedBlocks] = useState<Record<string, string>>({});
   const [bulletBlocks, setBulletBlocks] = useState<Record<string, string[]>>({});
-  const [fontSettings, setFontSettings] =
-    useState<FontSettings>(DEFAULT_FONT_SETTINGS);
 
   const fontAdjustedRef = useRef(false);
   const rereadAdjustedRef = useRef(false);
@@ -69,59 +81,20 @@ function AdaptiveReaderContent() {
     [pages]
   );
 
-  const showWordPopup = useCallback(async (event: GazeEvent) => {
+  const showWordPopup = useCallback((event: GazeEvent) => {
     if (!event.wordId) return;
-
+  
     const element = findWordElement(event.wordId);
     if (!element) return;
-
+  
     const word = element.dataset.word ?? element.textContent?.trim() ?? "";
     if (!word) return;
-
-    const rect = element.getBoundingClientRect();
-
+  
     setWordPopup({
       wordId: event.wordId,
       word,
-      x: rect.left,
-      y: rect.bottom + 8,
-      definition: "Memuat penjelasan...",
-      isLoading: true,
+      anchorRect: element.getBoundingClientRect(),
     });
-
-    try {
-      const result = await callLLM<WordDefinitionResponse>("word_definition", {
-        word,
-      });
-
-      setWordPopup((current) => {
-        if (!current || current.wordId !== event.wordId) {
-          return current;
-        }
-
-        return {
-          ...current,
-          definition: result.definition,
-          isLoading: false,
-        };
-      });
-    } catch {
-      setWordPopup((current) => {
-        if (!current || current.wordId !== event.wordId) {
-          return current;
-        }
-
-        return {
-          ...current,
-          definition: "Penjelasan belum tersedia.",
-          isLoading: false,
-        };
-      });
-    }
-
-    window.setTimeout(() => {
-      setWordPopup((current) => (current?.wordId === event.wordId ? null : current));
-    }, 5000);
   }, []);
 
   const simplifySentence = useCallback(
@@ -172,11 +145,7 @@ function AdaptiveReaderContent() {
 
         if (detector.getTotalRegressions() >= 5 && !fontAdjustedRef.current) {
           fontAdjustedRef.current = true;
-          setFontSettings((current) => ({
-            ...current,
-            fontSize: current.fontSize + 2,
-            lineHeight: current.lineHeight + 0.2,
-          }));
+          increase();
         }
 
         return;
@@ -188,15 +157,19 @@ function AdaptiveReaderContent() {
 
         if (rereadEventsRef.current >= 3 && !rereadAdjustedRef.current) {
           rereadAdjustedRef.current = true;
-          setFontSettings((current) => ({
-            ...current,
-            letterSpacing: Math.max(current.letterSpacing, 1),
-            fontFamily: "opendyslexic",
-          }));
+          applyDyslexicFont();
         }
       }
     },
-    [detector, findBlockById, showWordPopup, simplifyParagraph, simplifySentence]
+    [
+      applyDyslexicFont,
+      detector,
+      findBlockById,
+      increase,
+      showWordPopup,
+      simplifyParagraph,
+      simplifySentence,
+    ]
   );
 
   useEffect(() => {
@@ -210,6 +183,21 @@ function AdaptiveReaderContent() {
     detector.processGazePoint(latestGaze, elementAtGaze);
   }, [detector, isCalibrated, latestGaze]);
 
+  useEffect(() => {
+    if (!wordPopup || !latestGaze) return;
+  
+    const elementAtGaze = document.elementFromPoint(latestGaze.x, latestGaze.y);
+  
+    if (
+      elementAtGaze instanceof HTMLElement &&
+      elementAtGaze.dataset.wordId === wordPopup.wordId
+    ) {
+      return;
+    }
+  
+    setWordPopup(null);
+  }, [latestGaze, wordPopup]);
+
   function handleExtracted(nextPages: PDFPage[], file: File) {
     detector.reset();
     setPdfFile(file);
@@ -217,7 +205,7 @@ function AdaptiveReaderContent() {
     setWordPopup(null);
     setSimplifiedBlocks({});
     setBulletBlocks({});
-    setFontSettings(DEFAULT_FONT_SETTINGS);
+    reset();
     fontAdjustedRef.current = false;
     rereadAdjustedRef.current = false;
     rereadEventsRef.current = 0;
@@ -249,19 +237,13 @@ function AdaptiveReaderContent() {
           />
         )}
       </div>
-
-      {wordPopup && (
-        <div
-          className="fixed z-[9998] max-w-xs rounded-lg border bg-white p-3 text-sm shadow-lg"
-          style={{
-            left: wordPopup.x,
-            top: wordPopup.y,
-          }}
-        >
-          <p className="font-semibold">{wordPopup.word}</p>
-          <p className="mt-1 text-gray-700">{wordPopup.definition}</p>
-        </div>
-      )}
+        {wordPopup && (
+          <WordPopup
+            word={wordPopup.word}
+            anchorRect={wordPopup.anchorRect}
+            onDismiss={() => setWordPopup(null)}
+          />
+        )}
     </main>
   );
 }
