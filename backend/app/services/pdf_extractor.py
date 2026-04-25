@@ -43,11 +43,8 @@ def extract_pdf(pdf_bytes: bytes) -> list[PageBlocks]:
                     )
 
             elif block.get("type") == 1:  # image block
-                img_list = page.get_images(full=True)
-                for img_info in img_list:
-                    xref = img_info[0]
-                    base_img = doc.extract_image(xref)
-                    img_bytes = base_img["image"]
+                img_bytes = block.get("image")
+                if img_bytes:
                     b64 = base64.b64encode(img_bytes).decode("utf-8")
                     blocks.append(
                         PDFBlock(
@@ -57,7 +54,6 @@ def extract_pdf(pdf_bytes: bytes) -> list[PageBlocks]:
                             image_data=b64,
                         )
                     )
-                    break  # one image per block ref
 
         pages.append(PageBlocks(page_num=page_idx + 1, blocks=blocks))
 
