@@ -320,7 +320,7 @@ export default function HomePage() {
               </h2>
 
               <p className="mt-5 max-w-lg text-sm leading-7 text-[#617087]">
-                DyslexiAID terintegrasi dengan LMS sekolah dan menyediakan dashboard analitik
+                Kirana terintegrasi dengan LMS sekolah dan menyediakan dashboard analitik
                 untuk memantau perkembangan siswa secara menyeluruh dan aman.
               </p>
 
