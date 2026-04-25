@@ -50,9 +50,10 @@ describe("LLM Provider Factory", () => {
     process.env = originalEnv;
   });
 
-  it("returns GroqProvider when PRODUCTION=true", async () => {
-    process.env.PRODUCTION = "true";
+  it("returns GroqProvider when PRODUCTION=false", async () => {
+    process.env.PRODUCTION = "false"; // Make sure PRODUCTION is false for this test
     process.env.GROQ_API_KEY = "test_key";
+    process.env.OPENROUTER_API_KEY = "test_key";
 
     const { createLLMProvider } = await import("@/lib/llm/provider");
     const { GroqProvider } = await import("@/lib/llm/groqProvider");
@@ -62,8 +63,8 @@ describe("LLM Provider Factory", () => {
     expect(provider).toBeInstanceOf(GroqProvider);
   });
 
-  it("returns OpenRouterProvider when PRODUCTION=false", async () => {
-    process.env.PRODUCTION = "false";
+  it("returns OpenRouterProvider when PRODUCTION=true", async () => {
+    process.env.PRODUCTION = "true"; // Ensure PRODUCTION is true here
     process.env.OPENROUTER_API_KEY = "test_openrouter_key";
 
     const { createLLMProvider } = await import("@/lib/llm/provider");

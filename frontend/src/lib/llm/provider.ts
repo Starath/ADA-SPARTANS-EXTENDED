@@ -1,13 +1,18 @@
 import type { LLMProvider } from "@/types";
-import { ClaudeAgentSDKProvider } from "./claudeAgentSDK";
 import { GroqProvider } from "./groqProvider";
+import { OpenRouterProvider } from "./openRouterProvider";
 
 export type { LLMProvider };
 
-type Env = Record<string, string | undefined>;
+export function createLLMProvider(): LLMProvider {
+  if (process.env.PRODUCTION === "false") {
+    return new GroqProvider(process.env.GROQ_API_KEY!);
+  }
 
-export function createLLMProvider(env: Env = process.env as Env): LLMProvider {
-  return env.PRODUCTION === "true"
-    ? new GroqProvider(env.GROQ_API_KEY ?? "")
-    : new ClaudeAgentSDKProvider();
+  return new OpenRouterProvider({
+    apiKey: process.env.OPENROUTER_API_KEY,
+    model: process.env.OPENROUTER_MODEL,
+    siteUrl: process.env.OPENROUTER_SITE_URL,
+    appTitle: process.env.OPENROUTER_APP_TITLE,
+  });
 }
