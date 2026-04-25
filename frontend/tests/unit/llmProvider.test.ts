@@ -25,21 +25,19 @@ describe("LLM Provider Factory", () => {
     process.env = originalEnv;
   });
 
-  it("returns GroqProvider when PRODUCTION=true", async () => {
+  it("returns ClaudeAgentSDKProvider when PRODUCTION=true", async () => {
     process.env.PRODUCTION = "true";
-    process.env.GROQ_API_KEY = "test_key";
-    const { createLLMProvider } = await import("@/lib/llm/provider");
-    const { GroqProvider } = await import("@/lib/llm/groqProvider");
-    const provider = createLLMProvider();
-    expect(provider).toBeInstanceOf(GroqProvider);
-  });
-
-  it("returns ClaudeAgentSDKProvider when PRODUCTION=false", async () => {
-    process.env.PRODUCTION = "false";
-    const { createLLMProvider } = await import("@/lib/llm/provider");
-    const { ClaudeAgentSDKProvider } = await import("@/lib/llm/claudeAgentSDK");
+    const { createLLMProvider, ClaudeAgentSDKProvider } = await import("@/lib/llm/provider");
     const provider = createLLMProvider();
     expect(provider).toBeInstanceOf(ClaudeAgentSDKProvider);
+  });
+
+  it("returns GroqProvider when PRODUCTION=false", async () => {
+    process.env.PRODUCTION = "false";
+    process.env.GROQ_API_KEY = "test_key";
+    const { createLLMProvider, GroqProvider } = await import("@/lib/llm/provider");
+    const provider = createLLMProvider();
+    expect(provider).toBeInstanceOf(GroqProvider);
   });
 });
 

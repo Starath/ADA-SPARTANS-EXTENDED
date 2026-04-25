@@ -11,10 +11,8 @@ const config: NextConfig = {
     };
     return cfg;
   },
-  // PDF.js worker
-  experimental: {
-    serverComponentsExternalPackages: ["@anthropic-ai/claude-agent-sdk"],
-  },
+  // Keep claude-agent-sdk out of the Next.js bundle (it's Node-only)
+  serverExternalPackages: ["@anthropic-ai/claude-agent-sdk"],
 };
 
 export default config;
