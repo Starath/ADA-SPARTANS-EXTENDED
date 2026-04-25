@@ -19,7 +19,7 @@ export class FixationDetector {
     this.buffer.push(point);
 
     if (this.buffer.length > GAZE_BUFFER_SIZE) {
-      this.buffer.shift();
+      this.buffer.shift(); // Keep buffer size constant
     }
 
     if (this.buffer.length < 2) {
@@ -30,7 +30,7 @@ export class FixationDetector {
       this.buffer[this.buffer.length - 1].timestamp - this.buffer[0].timestamp;
 
     if (durationMs < FIXATION_MIN_DURATION_MS) {
-      return { isFixation: false, durationMs };
+      return { isFixation: false, durationMs }; // Ensure that we don’t emit too early
     }
 
     const centroid = meanPoint(this.buffer);
@@ -38,6 +38,7 @@ export class FixationDetector {
       ...this.buffer.map((p) => distance(p, centroid))
     );
 
+    // Return result only when the max distance from centroid is within the threshold
     return {
       isFixation: maxDistanceFromCentroid <= FIXATION_RADIUS_PX,
       durationMs,
@@ -74,8 +75,7 @@ export class RegressionDetector {
       const count = (this.regressionCount.get(blockId) ?? 0) + 1;
       this.regressionCount.set(blockId, count);
 
-      // Reset the line maximum to avoid emitting duplicate regressions for the
-      // same backward jump on every following low-x point.
+      // Reset the line maximum to avoid emitting duplicate regressions for the same backward jump
       this.maxXPerLine.set(bucket, point.x);
 
       return {
@@ -120,10 +120,8 @@ export class RereadTracker {
       return null;
     }
 
-    // A continuous stream over the same block is still one visit. A new visit
-    // starts only after gaze moves to another block or leaves all blocks.
     if (blockId === this.currentBlockId) {
-      return null;
+      return null; // Ignore consecutive visits
     }
 
     this.currentBlockId = blockId;

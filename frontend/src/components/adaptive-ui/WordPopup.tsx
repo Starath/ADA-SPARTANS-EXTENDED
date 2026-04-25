@@ -9,7 +9,7 @@ interface Props {
 
 export function WordPopup({ word, anchorRect, onDismiss }: Props) {
   const [definition, setDefinition] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/llm", {

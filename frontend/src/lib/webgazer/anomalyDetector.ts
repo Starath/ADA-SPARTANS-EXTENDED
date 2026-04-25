@@ -68,7 +68,7 @@ export class AnomalyDetector {
   private emit(event: GazeEvent) {
     const key = `${event.type}:${event.blockId}`;
     const last = this.lastEmitted.get(key) ?? 0;
-    if (event.timestamp - last < DEBOUNCE_MS) return;
+    if (event.timestamp - last < DEBOUNCE_MS) return; // Apply debounce
     this.lastEmitted.set(key, event.timestamp);
     this.listeners.forEach((l) => l(event));
   }
