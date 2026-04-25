@@ -1,5 +1,5 @@
 from __future__ import annotations
-from app.agents.graph import AgentState
+from app.agents.state import AgentState
 
 
 def reporter_node(state: AgentState) -> AgentState:

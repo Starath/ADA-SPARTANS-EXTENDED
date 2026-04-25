@@ -53,6 +53,27 @@ class TestResearcherNode:
         assert isinstance(result["context"], str)
 
 
+class TestPipelineFlow:
+    def test_combined_handwriting_and_transcript_produces_indicators(self):
+        state = make_state(
+            handwriting=make_handwriting("reversal"),
+            transcript=make_transcript(wpm=30.0),
+            child_age=8,
+            child_grade=2,
+        )
+
+        state = researcher_node(state)
+        state = diagnostician_node(state)
+        state = critic_node(state)
+        result = reporter_node(state)
+
+        final_report = result["final_report"]
+        assert final_report is not None
+        assert final_report.risk_level in {"medium", "high"}
+        assert len(final_report.indicators) > 0
+        assert "catatan" in final_report.reasoning.lower() or "kritik" in final_report.reasoning.lower()
+
+
 class TestDiagnosticianNode:
     def test_returns_diagnosis_with_risk_level(self):
         state = researcher_node(make_state(handwriting=make_handwriting("reversal")))
