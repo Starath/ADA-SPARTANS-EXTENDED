@@ -47,6 +47,7 @@ class HandwritingResult(BaseModel):
     confidence: float = Field(ge=0, le=1)
     reversal_chars: list[str] = []
     gradcam_image: Optional[str] = None  # base64
+    detected_chars: list[dict] = []
 
 
 class DiagnosisIndicator(BaseModel):
