@@ -53,6 +53,7 @@ pnpm-debug.log*
 .next/
 .nuxt/
 coverage/
+*.tsbuildinfo
 
 # Java / Kotlin
 *.class

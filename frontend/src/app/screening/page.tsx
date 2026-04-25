@@ -758,8 +758,8 @@ function WavePreview({ words }: { words: string[] }) {
         ))}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {words.map((word) => (
-          <span key={word} className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-[#6a7893] shadow-sm">
+        {words.map((word, index) => (
+          <span key={`${word}-${index}`} className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-[#6a7893] shadow-sm">
             {word}
           </span>
         ))}
