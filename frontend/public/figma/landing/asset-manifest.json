@@ -1,0 +1,62 @@
+{
+  "source": "https://www.figma.com/design/9cxaOinHS6EqqoaRj8E1Ko/Lomba?node-id=274-21278&t=Y79XRVzKiuWMdEHy-4",
+  "note": "The Figma MCP provided short-lived asset URLs, but this execution environment could not download external URLs. Per request, grey placeholder SVGs are included in this directory with stable local paths. Replace them with the exported Figma images when available.",
+  "placeholders": [
+    {
+      "localPath": "/figma/landing/hero-child-placeholder.svg",
+      "intendedUse": "Hero child reading illustration / bobby asset"
+    },
+    {
+      "localPath": "/figma/landing/card-trimodal-placeholder.svg",
+      "intendedUse": "Tri-Modal Screening card image"
+    },
+    {
+      "localPath": "/figma/landing/card-reader-placeholder.svg",
+      "intendedUse": "Smart Reader card image"
+    },
+    {
+      "localPath": "/figma/landing/card-report-placeholder.svg",
+      "intendedUse": "Ringkasan Hasil card image"
+    },
+    {
+      "localPath": "/figma/landing/card-school-placeholder.svg",
+      "intendedUse": "Integrasi Sekolah card image"
+    },
+    {
+      "localPath": "/figma/landing/step-write-placeholder.svg",
+      "intendedUse": "Step 1 illustration"
+    },
+    {
+      "localPath": "/figma/landing/step-read-placeholder.svg",
+      "intendedUse": "Step 2 illustration"
+    },
+    {
+      "localPath": "/figma/landing/step-report-placeholder.svg",
+      "intendedUse": "Step 3 illustration"
+    },
+    {
+      "localPath": "/figma/landing/school-landscape-placeholder.svg",
+      "intendedUse": "School integration background landscape"
+    }
+  ],
+  "figmaAssetUrls": {
+    "imgUntitledDesign72": "https://www.figma.com/api/mcp/asset/67d36fc3-6743-43fa-bde6-d0ed69bdc0de",
+    "imgScreenshot20260425At2004501": "https://www.figma.com/api/mcp/asset/fc30c6e7-6d4a-455f-87ae-91bdcd82f736",
+    "imgLandingPage": "https://www.figma.com/api/mcp/asset/9f254991-db4d-4761-9b4b-ee2f57ae9cca",
+    "imgVector": "https://www.figma.com/api/mcp/asset/89d576ec-fb90-437b-9aef-bd38c8cd80d5",
+    "imgVector1": "https://www.figma.com/api/mcp/asset/b316a010-bb71-4c24-8e62-d3339b64c2bf",
+    "imgGroup1": "https://www.figma.com/api/mcp/asset/dc3da384-38ec-48a9-9741-dc86ecb187a5",
+    "imgFrame19": "https://www.figma.com/api/mcp/asset/8cf47bf8-1e9c-4a87-9a2d-20e540e48319",
+    "imgVector2": "https://www.figma.com/api/mcp/asset/fa81b174-2765-4585-8e66-1a02d18afcaa",
+    "imgFrame2": "https://www.figma.com/api/mcp/asset/f884ad20-c6ff-49a8-9208-cd2899ed2bd3",
+    "imgIcon": "https://www.figma.com/api/mcp/asset/9a6f9f51-322f-41b6-849b-8b745a229c1f",
+    "imgVector3": "https://www.figma.com/api/mcp/asset/93b156bf-cb07-42a0-b307-cc3de296987d",
+    "imgFrame8": "https://www.figma.com/api/mcp/asset/7157373d-e06e-41fd-a562-9e7b92e55b61",
+    "imgMdiEye": "https://www.figma.com/api/mcp/asset/40b6cccb-9075-4bcf-b29a-817b4968b373",
+    "imgFrame11": "https://www.figma.com/api/mcp/asset/85f46c29-4b58-457f-9787-a2b19f0915d4",
+    "imgGroup": "https://www.figma.com/api/mcp/asset/33dee868-7223-46ee-85b6-944cfb5cf5fc",
+    "imgEmojioneMonotonePencil": "https://www.figma.com/api/mcp/asset/d2e8dc3a-ff3a-4cad-8d1d-089032a6abca",
+    "imgFrame14": "https://www.figma.com/api/mcp/asset/d93325ea-edf3-4631-8860-bf8f8d5d1816",
+    "imgFamiconsBook": "https://www.figma.com/api/mcp/asset/9039f597-6ad9-4736-9bb1-bfa734efb55b"
+  }
+}

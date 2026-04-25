@@ -1,0 +1,15 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grey placeholder for child reading illustration">
+  <rect width="640" height="640" fill="none"/>
+  <ellipse cx="318" cy="546" rx="210" ry="32" fill="#D8DEE6" opacity="0.65"/>
+  <circle cx="320" cy="210" r="82" fill="#D9DEE6" stroke="#B8C0CC" stroke-width="5"/>
+  <path d="M220 468c18-98 62-160 100-160s82 62 100 160" fill="#CBD3DE" stroke="#AEB8C5" stroke-width="6"/>
+  <path d="M196 402c-26 10-44 28-54 55l116 47c12-34-10-80-62-102Z" fill="#DDE2EA" stroke="#B8C0CC" stroke-width="5"/>
+  <path d="M444 402c26 10 44 28 54 55l-116 47c-12-34 10-80 62-102Z" fill="#DDE2EA" stroke="#B8C0CC" stroke-width="5"/>
+  <path d="M180 380c72 7 122 31 140 69v92c-54-30-102-44-166-49V386c0-5 10-8 26-6Z" fill="#EEF1F5" stroke="#AEB8C5" stroke-width="7"/>
+  <path d="M460 380c-72 7-122 31-140 69v92c54-30 102-44 166-49V386c0-5-10-8-26-6Z" fill="#EEF1F5" stroke="#AEB8C5" stroke-width="7"/>
+  <path d="M197 420c39 5 76 18 100 36M443 420c-39 5-76 18-100 36" stroke="#B8C0CC" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="287" cy="207" r="8" fill="#7D8796"/>
+  <circle cx="353" cy="207" r="8" fill="#7D8796"/>
+  <path d="M294 248c17 13 35 13 52 0" stroke="#7D8796" stroke-width="6" stroke-linecap="round"/>
+  <rect x="214" y="92" width="212" height="38" rx="19" fill="#EEF1F5" stroke="#B8C0CC" stroke-width="4"/>
+</svg>
