@@ -162,7 +162,7 @@ function TopBar({ onBack }: { onBack?: () => void }) {
 function ScreeningFooter() {
   return (
     <footer className="relative z-10 pb-7 pt-10 text-center text-sm text-slate-400">
-      (c) 2026 KIRANA. Semua hak dilindungi.
+      © 2026 KIRANA. Semua hak dilindungi.
     </footer>
   );
 }
