@@ -2,8 +2,25 @@ import io
 import pytest
 import fitz
 from app.services.pdf_extractor import extract_pdf
-from app.models.schemas import PageBlocks
+from app.models.schemas import PageBlocks, PDFBlock
+from PIL import Image
 
+def make_pdf_with_image() -> bytes:
+    """Buat PDF dengan satu image dummy 50x50 px"""
+    img = Image.new("RGB", (50, 50), color=(255, 0, 0))
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+
+    doc = fitz.open()
+    page = doc.new_page(width=200, height=200)
+    rect = fitz.Rect(25, 25, 75, 75)
+    # Insert image dari bytes
+    page.insert_image(rect, stream=img_bytes.read())
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
 
 def make_simple_pdf(text: str = "Hello World") -> bytes:
     doc = fitz.open()
@@ -61,3 +78,24 @@ def test_empty_pdf_no_crash():
     doc.save(buf)
     result = extract_pdf(buf.getvalue())
     assert len(result) == 1
+
+def test_image_blocks_have_image_data():
+    """Ensure image blocks contain non-empty base64 image_data."""
+    pdf_bytes = make_pdf_with_image()
+    pages = extract_pdf(pdf_bytes)
+
+    found_image_block = False
+    for page in pages:
+        for block in page.blocks:
+            if block.type == "image":
+                found_image_block = True
+                assert hasattr(block, "image_data")
+                assert block.image_data is not None
+                assert block.image_data.strip() != ""
+                # bbox tetap normalisasi 0-1
+                assert 0 <= block.bbox.x0 <= 1
+                assert 0 <= block.bbox.y0 <= 1
+                assert 0 <= block.bbox.x1 <= 1
+                assert 0 <= block.bbox.y1 <= 1
+
+    assert found_image_block, "No image block found in PDF"

@@ -1,7 +1,5 @@
 from __future__ import annotations
-import os
-import json
-from app.agents.graph import AgentState
+from app.agents.state import AgentState
 from app.models.schemas import DiagnosisResult, DiagnosisIndicator
 
 

@@ -50,3 +50,19 @@ async def test_extracted_blocks_have_valid_structure():
             assert block["type"] in {"text", "image"}
             assert "bbox" in block
             assert 0 <= block["bbox"]["x0"] <= 1
+
+@pytest.mark.asyncio
+async def test_extract_pdf_text_blocks_have_text():
+    """Test that text blocks in API response have non-empty 'text' field."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/pdf/extract",
+            files={"file": ("test.pdf", make_pdf_bytes(), "application/pdf")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    for page in data["pages"]:
+        for block in page["blocks"]:
+            if block["type"] == "text":
+                assert block.get("text") is not None
+                assert block["text"].strip() != ""

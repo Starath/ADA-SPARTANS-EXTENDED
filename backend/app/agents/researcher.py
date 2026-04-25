@@ -1,5 +1,5 @@
 from __future__ import annotations
-from app.agents.graph import AgentState
+from app.agents.state import AgentState
 
 # Placeholder RAG retrieval — will query pgvector with indo-sentence-bert embeddings
 # Returns context strings from dyslexia guidelines (ADI, DSM-5 criteria in Indonesian)
