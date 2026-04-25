@@ -1,8 +1,16 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  webpack: (cfg) => {
-    // webgazer and pdfjs are browser-only
+  webpack: (cfg, { isServer }) => {
+    if (isServer) {
+      // webgazer accesses window/document at module level — keep it out of server bundle
+      const existing = Array.isArray(cfg.externals)
+        ? cfg.externals
+        : cfg.externals
+        ? [cfg.externals]
+        : [];
+      cfg.externals = [...existing, "webgazer"];
+    }
     cfg.resolve.fallback = {
       ...cfg.resolve.fallback,
       fs: false,
@@ -11,7 +19,6 @@ const config: NextConfig = {
     };
     return cfg;
   },
-  // Keep claude-agent-sdk out of the Next.js bundle (it's Node-only)
   serverExternalPackages: ["@anthropic-ai/claude-agent-sdk"],
 };
 

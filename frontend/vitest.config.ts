@@ -8,10 +8,16 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
+    // Exclude Playwright e2e tests from vitest
+    exclude: ["tests/e2e/**", "node_modules/**"],
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@anthropic-ai/claude-agent-sdk": path.resolve(
+        __dirname,
+        "./__mocks__/@anthropic-ai/claude-agent-sdk.ts"
+      ),
     },
   },
 });

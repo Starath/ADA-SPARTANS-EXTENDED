@@ -56,8 +56,17 @@ describe("LLM Provider Factory", () => {
       "@/lib/llm/provider"
     );
     const provider = createLLMProvider();
+    expect(provider).toBeInstanceOf(ClaudeAgentSDKProvider);
+  });
 
-    expect(provider).toBeInstanceOf(OpenRouterProvider);
+  it("returns GroqProvider when PRODUCTION=false", async () => {
+    process.env.PRODUCTION = "false";
+    process.env.GROQ_API_KEY = "test_groq_key";
+    const { createLLMProvider, GroqProvider } = await import(
+      "@/lib/llm/provider"
+    );
+    const provider = createLLMProvider();
+    expect(provider).toBeInstanceOf(GroqProvider);
   });
 
   it("GroqProvider and OpenRouterProvider implement LLMProvider interface", async () => {
@@ -113,16 +122,6 @@ describe("LLM Provider Factory", () => {
       })
     );
     expect(result).toBe('{"definition":"contoh"}');
-  });
-
-  it("returns GroqProvider when PRODUCTION=false", async () => {
-    process.env.PRODUCTION = "false";
-    process.env.GROQ_API_KEY = "test_key";
-    const { createLLMProvider, GroqProvider } = await import(
-      "@/lib/llm/provider"
-    );
-    const provider = createLLMProvider();
-    expect(provider).toBeInstanceOf(GroqProvider);
   });
 });
 

@@ -109,11 +109,22 @@ export interface TranscriptResult {
 // Handwriting types
 export type HandwritingClassification = "normal" | "reversal" | "corrected";
 
+export interface HandwritingDetection {
+  bbox: [number, number, number, number]; // [x0, y0, x1, y1] pixel coords
+  cls: number; // 0=Normal 1=Reversal 2=Corrected
+  conf: number;
+  label: string;
+  char: string | null;
+  is_reversal: boolean;
+  is_corrected: boolean;
+}
+
 export interface HandwritingResult {
   classification: HandwritingClassification;
   confidence: number;
   reversalChars: string[];
   gradcamImage?: string;
+  detectedChars?: HandwritingDetection[];
 }
 
 // Screening session state

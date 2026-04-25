@@ -1,0 +1,48 @@
+/* Google Fonts must come before @tailwind directives */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic3-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic3-Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+:root {
+  --teal: #5AC8C8;
+  --teal-light: #E8F7F7;
+  --navy: #1E293B;
+  --beige: #F5F0E8;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #ffffff;
+  color: #1E293B;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-slate-800 text-white font-semibold px-6 py-3 rounded-full hover:bg-slate-700 transition-all duration-200 text-sm;
+  }
+
+  .btn-teal {
+    @apply inline-flex items-center gap-2 bg-[#5AC8C8] text-white font-semibold px-5 py-2.5 rounded-full hover:bg-[#4ab8b8] transition-all duration-200 text-sm;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl border border-gray-200 shadow-sm;
+  }
+}
