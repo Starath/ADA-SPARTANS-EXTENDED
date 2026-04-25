@@ -1,5 +1,5 @@
 /* Google Fonts must come before @tailwind directives */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -24,6 +24,10 @@
   --teal-light: #E8F7F7;
   --navy: #1E293B;
   --beige: #F5F0E8;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
