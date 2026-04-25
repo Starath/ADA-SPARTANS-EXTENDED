@@ -1,0 +1,94 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+out/
+target/
+
+# Cache
+.cache/
+.tmp/
+temp/
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# JavaScript / TypeScript
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.next/
+.nuxt/
+coverage/
+
+# Java / Kotlin
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+
+# Go
+*.exe
+*.test
+
+# Rust
+Cargo.lock
+# Keep Cargo.lock for applications; ignore it for libraries if preferred
+
+# PHP
+composer.lock
+# Keep composer.lock for applications; ignore it for libraries if preferred
+
+# Database / local files
+*.sqlite
+*.sqlite3
+*.db
+
+# Secrets / keys
+*.pem
+*.key
+*.crt
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Misc
+*.bak
+*.old
