@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { WebGazerProvider, useWebGazer } from "@/components/webgazer/WebGazerProvider";
+import { CalibrationScreen } from "@/components/webgazer/CalibrationScreen";
 import type { DiagnosisResult, HandwritingResult, TranscriptResult } from "@/types";
 
 const HANDWRITING_WORDS = ["rumah", "bola", "meja"] as const;
@@ -487,13 +488,14 @@ function HandwritingPreviewWithBoxes({
   }, [detections, imageSize.height, imageSize.width]);
 
   return (
-    <div className={classNames("relative overflow-hidden rounded-[20px] bg-[#d7d7d7]", className)}>
+    <div className={classNames("overflow-hidden rounded-[20px] bg-[#d7d7d7]", className)}>
       {imageSource ? (
-        <>
+        /* Inner div sizes to the image — SVG overlays exactly this area */
+        <div className="relative">
           <img
             src={imageSource}
             alt={alt}
-            className="h-full w-full object-contain"
+            className="block w-full"
             onLoad={(event) => {
               setImageSize({
                 width: event.currentTarget.naturalWidth,
@@ -506,7 +508,6 @@ function HandwritingPreviewWithBoxes({
             <svg
               className="pointer-events-none absolute inset-0 h-full w-full"
               viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
-              preserveAspectRatio="xMidYMid meet"
               aria-hidden
             >
               {boxes.map((box, index) => {
@@ -551,7 +552,7 @@ function HandwritingPreviewWithBoxes({
               {boxes.length} bounding box terdeteksi
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="h-full w-full" />
       )}
@@ -569,10 +570,6 @@ function PredictionPanel({
   handwriting?: HandwritingResult;
   onNext: () => void;
 }) {
-  const confidence = handwriting ? Math.round(handwriting.confidence * 100) : 0;
-  const reversalCount = handwriting?.detectedChars?.filter((item) => item.cls === 1).length ?? 0;
-  const correctedCount = handwriting?.detectedChars?.filter((item) => item.cls === 2).length ?? 0;
-
   return (
     <Card className="w-full max-w-[400px] p-6">
       <h2 className="text-center text-[26px] font-extrabold text-[#17336f]">Hasil Prediksi</h2>
@@ -597,23 +594,16 @@ function PredictionPanel({
         )}
 
         {!upload.loading && handwriting && (
-          <div className="space-y-3">
-            <div className="rounded-2xl bg-white/80 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Klasifikasi</p>
-              <p className="mt-1 text-2xl font-extrabold capitalize text-[#17336f]">{handwriting.classification}</p>
-              <p className="text-sm font-semibold text-slate-500">Confidence {confidence}%</p>
+          <div className="flex flex-col items-center justify-center gap-3 py-4">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-[#4bb75c]">
+              <svg className="h-9 w-9 text-white" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="m6 12.5 4 4L18.5 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="rounded-xl bg-white/75 p-3">
-                <p className="text-xl font-extrabold text-[#17336f]">{reversalCount}</p>
-                <p className="text-[11px] text-slate-500">Reversal</p>
-              </div>
-              <div className="rounded-xl bg-white/75 p-3">
-                <p className="text-xl font-extrabold text-[#17336f]">{correctedCount}</p>
-                <p className="text-[11px] text-slate-500">Corrected</p>
-              </div>
-            </div>
+            <p className="text-xl font-extrabold text-[#17336f]">Kerja bagus!</p>
+            <p className="text-center text-sm text-slate-500">
+              Tulisan berhasil dianalisis. Lanjutkan ke tes membaca.
+            </p>
           </div>
         )}
       </div>
@@ -653,7 +643,7 @@ function HandwritingScreen({
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative flex min-h-screen flex-col overflow-hidden">
       <CloudBackdrop />
       <TopBar onBack={onBack} />
       <PageTitle
@@ -742,31 +732,13 @@ function HandwritingScreen({
         <PredictionPanel upload={upload} handwriting={handwriting} onNext={onNext} />
       </section>
 
-      <ScreeningFooter />
+      <div className="mt-auto">
+        <ScreeningFooter />
+      </div>
     </main>
   );
 }
 
-function WavePreview({ words }: { words: string[] }) {
-  const bars = [24, 34, 18, 38, 30, 22, 44, 15, 30, 40, 20, 28, 36, 45, 25, 15, 32, 24, 40, 17, 14, 36, 30, 20, 16, 26, 38, 44, 28, 14, 18, 16, 10, 8, 6, 12, 22, 30, 40, 32, 22, 18, 12, 8];
-
-  return (
-    <div className="rounded-xl bg-white/70 p-3">
-      <div className="flex h-[56px] items-center gap-1 overflow-hidden">
-        {bars.map((height, index) => (
-          <span key={index} className="w-1.5 rounded-full bg-[#2b9dff]" style={{ height }} />
-        ))}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {words.map((word) => (
-          <span key={word} className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-[#6a7893] shadow-sm">
-            {word}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function ReadingInner({
   transcripts,
@@ -779,7 +751,6 @@ function ReadingInner({
   onGoAnalysis: () => void;
   onBack: () => void;
 }) {
-  const { isReady } = useWebGazer();
   const [recordState, setRecordState] = useState<RecordState>("idle");
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string>();
@@ -788,7 +759,6 @@ function ReadingInner({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const words = useMemo(() => READING_TEXT.split(/\s+/), []);
   const hasTranscript = transcripts.length > 0 || recordState === "done";
 
   useEffect(() => {
@@ -865,7 +835,7 @@ function ReadingInner({
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative flex min-h-screen flex-col overflow-hidden">
       <CloudBackdrop />
       <TopBar onBack={onBack} />
       <PageTitle
@@ -935,49 +905,32 @@ function ReadingInner({
           </div>
         </Card>
 
-        <Card className="mt-9 px-12 py-8">
-          <h2 className="text-center text-[25px] font-extrabold text-[#17336f]">Preview Pembacaan</h2>
-          <p className="mt-2 text-center text-sm font-semibold text-[#a7b4ce]">Sistem menggunakan satu rekaman untuk analisis suara dan pola membaca.</p>
-
-          <div className="mt-5 grid gap-8 md:grid-cols-2">
-            <div className="rounded-[20px] border border-[#bdd7f5] bg-[#f3f8ff] p-8">
-              <div className="mb-6 flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-[#b7ddff]">
-                  <svg className="h-5 w-5 text-[#17336f]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M5 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm7 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm7 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" />
-                  </svg>
-                </span>
-                <h3 className="text-xl font-extrabold text-[#17336f]">Analisis Artikulasi</h3>
-              </div>
-              <WavePreview words={words} />
-            </div>
-
-            <div className="rounded-[20px] border border-[#bdd7f5] bg-[#f3f8ff] p-8">
-              <div className="mb-6 flex items-center gap-3">
-                <svg className="h-7 w-7 text-[#17336f]" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="currentColor" opacity=".95" />
-                  <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="#F3F8FF" />
-                </svg>
-                <h3 className="text-xl font-extrabold text-[#17336f]">Pemindaian Mata</h3>
-              </div>
-              <div className="grid h-[205px] place-items-center rounded-2xl bg-[#b9dbff] text-center text-sm font-semibold italic text-[#4a86df]">
-                {isReady ? "Live webcam aktif dengan track detection" : "Placeholder live Webcam dengan track detection"}
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            disabled={!hasTranscript || recordState === "processing"}
-            onClick={onGoAnalysis}
-            className="mt-9 h-12 w-full rounded-lg bg-[#17336f] text-sm font-extrabold text-white transition hover:bg-[#10285b] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
-          >
-            Lanjut ke Ringkasan
-          </button>
-        </Card>
       </section>
 
-      <ScreeningFooter />
+      <div className="mt-auto">
+        <ScreeningFooter />
+      </div>
+    </main>
+  );
+}
+
+function CalibrationInner({ onComplete, onBack }: { onComplete: () => void; onBack: () => void }) {
+  return (
+    <main className="relative flex min-h-screen flex-col overflow-hidden">
+      <CloudBackdrop />
+      <TopBar onBack={onBack} />
+      <PageTitle
+        step={2}
+        title="Kalibrasi Mata"
+        description="Sebelum tes membaca, kalibrasi kamera agar sistem dapat melacak pola baca secara akurat."
+        compact
+      />
+      <div className="relative z-10 mx-auto mt-8 w-full max-w-[760px] px-4">
+        <CalibrationScreen onComplete={onComplete} />
+      </div>
+      <div className="mt-auto">
+        <ScreeningFooter />
+      </div>
     </main>
   );
 }
@@ -988,9 +941,15 @@ function ReadingScreen(props: {
   onGoAnalysis: () => void;
   onBack: () => void;
 }) {
+  const [calibrated, setCalibrated] = useState(false);
+
   return (
     <WebGazerProvider>
-      <ReadingInner {...props} />
+      {!calibrated ? (
+        <CalibrationInner onComplete={() => setCalibrated(true)} onBack={props.onBack} />
+      ) : (
+        <ReadingInner {...props} />
+      )}
     </WebGazerProvider>
   );
 }
@@ -1109,6 +1068,49 @@ function AnalysisScreen({ progress }: { progress: number }) {
   );
 }
 
+const RISK_CONFIG = {
+  high: {
+    label: "Risiko Tinggi",
+    badgeBg: "bg-red-100",
+    badgeText: "text-red-700",
+    dot: "bg-red-500",
+    cardBorder: "border-red-200",
+    cardBg: "bg-red-50",
+    icon: (
+      <svg className="h-9 w-9 text-red-500" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  medium: {
+    label: "Risiko Sedang",
+    badgeBg: "bg-yellow-100",
+    badgeText: "text-yellow-700",
+    dot: "bg-yellow-500",
+    cardBorder: "border-yellow-200",
+    cardBg: "bg-yellow-50",
+    icon: (
+      <svg className="h-9 w-9 text-yellow-500" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm0-6v-4m0-4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  low: {
+    label: "Risiko Rendah",
+    badgeBg: "bg-green-100",
+    badgeText: "text-green-700",
+    dot: "bg-green-500",
+    cardBorder: "border-green-200",
+    cardBg: "bg-green-50",
+    icon: (
+      <svg className="h-9 w-9 text-green-500" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="m9 11 3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+} as const;
+
 function ResultsScreen({
   diagnosis,
   handwriting,
@@ -1122,61 +1124,217 @@ function ResultsScreen({
   transcript?: TranscriptResult;
   onReset: () => void;
 }) {
-  const riskLabel =
-    diagnosis?.riskLevel === "high" ? "Risiko Tinggi" : diagnosis?.riskLevel === "medium" ? "Risiko Sedang" : "Risiko Rendah";
-  const confidence = Math.round((diagnosis?.confidence ?? handwriting?.confidence ?? 0.72) * 100);
+  const level = diagnosis?.riskLevel ?? "low";
+  const risk = RISK_CONFIG[level];
   const wordAnalysis = useMemo(() => analyzeReadingText(transcript), [transcript]);
+  const [imageExpanded, setImageExpanded] = useState(false);
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative flex min-h-screen flex-col overflow-hidden">
       <CloudBackdrop />
       <TopBar onBack={onReset} />
-      <PageTitle step={3} title="Ringkasan" description="Hasil awal skrining sudah siap. Gunakan hasil ini sebagai panduan awal, bukan diagnosis klinis." compact />
+      <PageTitle
+        step={3}
+        title="Ringkasan"
+        description="Hasil awal skrining sudah siap. Gunakan hasil ini sebagai panduan awal, bukan diagnosis klinis."
+        compact
+      />
 
-      <section className="relative z-10 mx-auto mt-9 grid w-full max-w-[980px] gap-6 px-4 md:grid-cols-[360px_1fr]">
-        <Card className="p-7 text-center">
-          <div className="mx-auto grid h-36 w-36 place-items-center rounded-full border-[12px] border-[#259dff]/20 bg-white">
-            <div>
-              <p className="text-4xl font-extrabold text-[#17336f]">{confidence}%</p>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">confidence</p>
-            </div>
-          </div>
-          <h2 className="mt-5 text-2xl font-extrabold text-[#17336f]">{riskLabel}</h2>
-          <p className="mt-3 text-sm leading-relaxed text-slate-500">
-            {diagnosis?.reasoning ??
-              "Sistem berhasil membaca pola tulisan dan pola pembacaan. Lanjutkan observasi dengan aktivitas membaca yang nyaman."}
-          </p>
-          <button type="button" onClick={onReset} className="mt-6 h-12 w-full rounded-xl bg-[#17336f] text-sm font-extrabold text-white">
-            Screening siswa lain
-          </button>
-        </Card>
+      <section className="relative z-10 mx-auto mt-9 grid w-full max-w-[980px] gap-6 px-4 pb-10 md:grid-cols-[340px_1fr]">
 
-        <div className="space-y-6">
-          <Card className="p-7">
-            <h3 className="text-xl font-extrabold text-[#17336f]">Deteksi Tulisan Tangan</h3>
-            <div className="mt-4 grid gap-4 md:grid-cols-[220px_1fr]">
-              <HandwritingPreviewWithBoxes
-                imageUrl={handwritingImageUrl}
-                handwriting={handwriting}
-                className="h-32 rounded-xl"
-                alt="Tulisan tangan"
-              />
-              <div className="rounded-xl bg-[#f3f8ff] p-4">
-                <p className="text-sm font-semibold text-slate-500">Klasifikasi</p>
-                <p className="text-2xl font-extrabold capitalize text-[#17336f]">{handwriting?.classification ?? "normal"}</p>
-                <p className="mt-2 text-sm text-slate-500">Huruf reversal: {handwriting?.reversalChars?.join(", ") || "tidak ada"}</p>
-              </div>
+        {/* LEFT — Risk summary */}
+        <div className="space-y-4">
+          <Card className={classNames("border-2 p-7 text-center", risk.cardBorder, risk.cardBg)}>
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-white shadow-md">
+              {risk.icon}
             </div>
+            <h2 className="mt-4 text-2xl font-extrabold text-[#17336f]">Skrining Selesai!</h2>
+            <div className={classNames("mx-auto mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5", risk.badgeBg)}>
+              <span className={classNames("h-2 w-2 rounded-full", risk.dot)} />
+              <span className={classNames("text-sm font-extrabold", risk.badgeText)}>{risk.label}</span>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-slate-600">
+              {diagnosis?.reasoning ??
+                "Sistem berhasil membaca pola tulisan dan pola pembacaan. Lanjutkan observasi dengan aktivitas membaca yang nyaman."}
+            </p>
           </Card>
 
+          {diagnosis?.recommendation && (
+            <Card className="p-6">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e8f5ff]" aria-hidden>
+                  <svg className="h-4 w-4 text-[#17336f]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z" />
+                  </svg>
+                </span>
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#17336f]">Rekomendasi</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-500">{diagnosis.recommendation}</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <button
+            type="button"
+            onClick={onReset}
+            className="h-12 w-full rounded-xl bg-[#17336f] text-sm font-extrabold text-white transition hover:bg-[#10285b]"
+          >
+            Screening siswa lain
+          </button>
+        </div>
+
+        {/* RIGHT — Detail cards */}
+        <div className="space-y-6">
+
+          {/* Handwriting */}
+          {(() => {
+            const detectedChars = (handwriting?.detectedChars ?? []) as DetectionLike[];
+            const reversalCount = detectedChars.filter((d) => toNumber(d.cls ?? d.class) === 1).length;
+            const correctedCount = detectedChars.filter((d) => toNumber(d.cls ?? d.class) === 2).length;
+            const normalCount = detectedChars.filter((d) => {
+              const cls = toNumber(d.cls ?? d.class);
+              return cls !== 1 && cls !== 2;
+            }).length;
+            const totalDetected = detectedChars.length;
+            const dyslexiaRisk =
+              totalDetected > 0
+                ? Math.round(((reversalCount + correctedCount * 0.5) / totalDetected) * 100)
+                : Math.round((handwriting?.confidence ?? 0) * 100);
+
+            return (
+              <Card className="p-7">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#edf7ff]" aria-hidden>
+                    <svg className="h-5 w-5 text-[#17336f]" viewBox="0 0 24 24" fill="none">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <h3 className="text-xl font-extrabold text-[#17336f]">Deteksi Tulisan Tangan</h3>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-[200px_1fr]">
+                  {/* Thumbnail — click to expand */}
+                  <button
+                    type="button"
+                    onClick={() => setImageExpanded(true)}
+                    className="group relative cursor-zoom-in"
+                    aria-label="Perbesar gambar tulisan tangan"
+                  >
+                    <HandwritingPreviewWithBoxes
+                      imageUrl={handwritingImageUrl}
+                      handwriting={handwriting}
+                      className="h-36 rounded-xl"
+                      alt="Tulisan tangan"
+                    />
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/0 transition group-hover:bg-black/20">
+                      <svg className="h-8 w-8 text-white opacity-0 drop-shadow transition group-hover:opacity-100" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M15 3h6m0 0v6m0-6-7 7M9 21H3m0 0v-6m0 6 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </button>
+
+                  {/* Lightbox */}
+                  {imageExpanded && (
+                    <div
+                      className="fixed inset-0 z-[200000] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                      onClick={() => setImageExpanded(false)}
+                    >
+                      <div
+                        className="relative mx-4 max-h-[90vh] w-full max-w-3xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <HandwritingPreviewWithBoxes
+                          imageUrl={handwritingImageUrl}
+                          handwriting={handwriting}
+                          className="max-h-[85vh] w-full rounded-2xl shadow-2xl"
+                          alt="Tulisan tangan (diperbesar)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setImageExpanded(false)}
+                          className="absolute -right-3 -top-3 grid h-9 w-9 place-items-center rounded-full bg-white shadow-lg transition hover:bg-gray-100"
+                          aria-label="Tutup"
+                        >
+                          <svg className="h-4 w-4 text-gray-700" viewBox="0 0 24 24" fill="none" aria-hidden>
+                            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {/* Risk percentage */}
+                    <div className="flex items-center gap-4 rounded-xl bg-[#f3f8ff] px-4 py-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Indikasi Disleksia</p>
+                        <p className="mt-0.5 text-3xl font-extrabold text-[#17336f]">{dyslexiaRisk}%</p>
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+                          <div
+                            className={classNames(
+                              "h-full rounded-full transition-all",
+                              dyslexiaRisk >= 60 ? "bg-red-500" : dyslexiaRisk >= 30 ? "bg-yellow-500" : "bg-green-500"
+                            )}
+                            style={{ width: `${dyslexiaRisk}%` }}
+                          />
+                        </div>
+                        <p className="mt-1 text-[11px] text-slate-400">dari total {totalDetected} karakter terdeteksi</p>
+                      </div>
+                    </div>
+
+                    {/* Breakdown */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl border border-red-100 bg-red-50 px-2 py-3">
+                        <p className="text-2xl font-extrabold text-red-600">{reversalCount}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-red-400">Reversal</p>
+                      </div>
+                      <div className="rounded-xl border border-yellow-100 bg-yellow-50 px-2 py-3">
+                        <p className="text-2xl font-extrabold text-yellow-600">{correctedCount}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-yellow-400">Corrected</p>
+                      </div>
+                      <div className="rounded-xl border border-green-100 bg-green-50 px-2 py-3">
+                        <p className="text-2xl font-extrabold text-green-600">{normalCount}</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-green-400">Normal</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Formula */}
+                <div className="mt-4 rounded-xl bg-[#f8fafc] px-4 py-3 font-mono text-xs text-slate-500">
+                  <span className="font-bold text-slate-600">Perhitungan: </span>
+                  ({reversalCount} reversal + {correctedCount} corrected × 0.5) ÷ {totalDetected || 1} total
+                  {" = "}
+                  <span className="font-bold text-[#17336f]">{dyslexiaRisk}%</span>
+                  {totalDetected === 0 && (
+                    <span className="ml-1 text-slate-400">(fallback: confidence model)</span>
+                  )}
+                </div>
+              </Card>
+            );
+          })()}
+
+          {/* Reading pattern */}
           <Card className="p-7">
-            <h3 className="text-xl font-extrabold text-[#17336f]">Pola Membaca</h3>
-            <div className="mt-4 rounded-xl bg-[#f3f8ff] p-4 text-sm leading-8 text-[#17336f]">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#edf7ff]" aria-hidden>
+                <svg className="h-5 w-5 text-[#17336f]" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2V3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7V3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <h3 className="text-xl font-extrabold text-[#17336f]">Pola Membaca</h3>
+            </div>
+
+            <div className="rounded-xl bg-[#f3f8ff] p-4 text-sm leading-8 text-[#17336f]">
               {wordAnalysis.map((item, index) => (
                 <span
                   key={`${item.word}-${index}`}
                   className={classNames(
-                    "mr-1.5 rounded px-1",
+                    "mr-1.5 rounded px-1 py-0.5",
                     item.status === "slow" && "bg-yellow-200 text-yellow-800",
                     item.status === "missed" && "bg-red-200 font-bold text-red-800"
                   )}
@@ -1185,28 +1343,36 @@ function ResultsScreen({
                 </span>
               ))}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-xl bg-[#edf7ff] p-4">
-                <p className="text-2xl font-extrabold text-[#17336f]">{Math.round(transcript?.wordsPerMinute ?? 0)}</p>
-                <p className="text-xs font-semibold text-slate-500">kata/menit</p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 rounded-lg bg-yellow-50 px-3 py-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-yellow-200" />
+                <span className="text-xs font-semibold text-yellow-700">Lambat</span>
               </div>
-              <div className="rounded-xl bg-[#edf7ff] p-4">
+              <div className="flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-red-200" />
+                <span className="text-xs font-semibold text-red-700">Terlewat</span>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-[#edf7ff] p-4 text-center">
+                <p className="text-2xl font-extrabold text-[#17336f]">{Math.round(transcript?.wordsPerMinute ?? 0)}</p>
+                <p className="mt-0.5 text-xs font-semibold text-slate-500">kata/menit</p>
+              </div>
+              <div className="rounded-xl bg-[#edf7ff] p-4 text-center">
                 <p className="text-2xl font-extrabold text-[#17336f]">{transcript?.words.length ?? 0}</p>
-                <p className="text-xs font-semibold text-slate-500">kata terdeteksi</p>
+                <p className="mt-0.5 text-xs font-semibold text-slate-500">kata terdeteksi</p>
               </div>
             </div>
           </Card>
 
-          {diagnosis?.recommendation && (
-            <Card className="p-7">
-              <h3 className="text-xl font-extrabold text-[#17336f]">Rekomendasi</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">{diagnosis.recommendation}</p>
-            </Card>
-          )}
         </div>
       </section>
 
-      <ScreeningFooter />
+      <div className="mt-auto">
+        <ScreeningFooter />
+      </div>
     </main>
   );
 }

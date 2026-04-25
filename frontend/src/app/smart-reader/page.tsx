@@ -136,7 +136,7 @@ export default function SmartReaderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-6">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-100 to-white p-6">
 
       {/* HEADER */}
       <div className="max-w-5xl mx-auto text-center mt-10">
@@ -317,7 +317,7 @@ export default function SmartReaderPage() {
       )}
 
       {/* FOOTER */}
-      <p className="text-center text-xs text-gray-400 mt-10">
+      <p className="mt-auto pt-10 text-center text-xs text-gray-400">
         © 2026 KIRANA. Semua hak dilindungi.
       </p>
     </div>
