@@ -1,4 +1,4 @@
-# Kirana / DyslexiAID
+# Kirana
 
 Kirana is a full-stack assistive learning prototype for Indonesian elementary students, especially children in grades 1-3 who may show early indicators of dyslexia. It combines early screening, handwriting analysis, oral reading analysis, adaptive PDF reading, gaze-aware interventions, and child-friendly Indonesian explanations.
 
@@ -287,7 +287,7 @@ cp .env.example .env
 Then edit:
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/dyslexiaid
+DATABASE_URL=postgresql://user:password@localhost:5432/Kirana
 OPENROUTER_API_KEY=sk-...
 GROQ_API_KEY=gsk_...
 PRODUCTION=false
@@ -314,7 +314,7 @@ GROQ_API_KEY=gsk_...
 OPENROUTER_API_KEY=sk-...
 OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_SITE_URL=http://localhost:3000
-OPENROUTER_APP_TITLE=DyslexiAID
+OPENROUTER_APP_TITLE=Kirana
 PRODUCTION=false
 ```
 
